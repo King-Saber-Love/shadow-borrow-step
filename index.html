@@ -13,7 +13,7 @@
   <body>
     <header>
       <h1>影子借步</h1>
-      <p class="subtitle">Shadow on Switch · 影子踩开关，门才开</p>
+      <p class="subtitle">Shadow on Switch · 影子踩开关，门才开 · 20 关</p>
     </header>
 
     <div class="hud">
@@ -25,6 +25,7 @@
         </div>
       </div>
       <div class="actions">
+        <button type="button" id="btn-hint" title="提示 (H)">提示</button>
         <button type="button" id="btn-undo" title="撤销 (Ctrl+Z)">撤销</button>
         <button type="button" id="btn-restart" title="重开 (R)">重开</button>
         <button type="button" id="btn-next" class="primary" disabled>下一关</button>
@@ -55,14 +56,19 @@
       <span><i class="ex-locked"></i> 锁门</span>
       <span><i class="ex-open"></i> 开门</span>
       <span><i class="hz">▲</i> 陷阱</span>
+      <span><i class="ice"></i> 冰</span>
+      <span><i class="jump">→</i> 弹跳</span>
+      <span><i class="oneway">»</i> 单向</span>
+      <span><i class="portal"></i> 传送</span>
     </div>
 
     <div class="level-select" id="level-select" aria-label="选关"></div>
 
     <footer class="help">
-      键盘方向键 / WASD · 触屏滑动或下方十字键<br />
-      你走一步，影子反一步；影子踩住开关后门才开，你才能进出口<br />
-      影子撞墙会停住（可钉在开关上）；重叠会挡住；撞墙 / 出界 / 踩刺可撤销或重开
+      键盘方向键 / WASD · 触屏滑动或下方十字键 · H 提示<br />
+      你走一步，影子反一步；影子踩住开关后门才开<br />
+      特殊格：冰（滑行）· 弹跳（跳两格，可越刺）· 单向道 · 传送门<br />
+      顺序解锁 1→20；已通关可重玩 · 1–10 关提示免费，11+ 需模拟广告
     </footer>
 
     <div class="overlay" id="overlay" role="dialog" aria-modal="true">
@@ -73,6 +79,25 @@
           <button type="button" id="overlay-replay">再玩本关</button>
           <button type="button" class="primary" id="overlay-next">下一关</button>
           <button type="button" id="overlay-close">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="ad-overlay" role="dialog" aria-modal="true">
+      <div class="card ad-card">
+        <h2 id="ad-title">观看广告中…</h2>
+        <p id="ad-msg">看完广告即可解锁本关提示</p>
+        <div class="ad-timer" id="ad-countdown">2.5</div>
+        <p class="ad-note">原型模拟 · 无真实广告 SDK</p>
+      </div>
+    </div>
+
+    <div class="overlay" id="hint-overlay" role="dialog" aria-modal="true">
+      <div class="card">
+        <h2 id="hint-title">提示</h2>
+        <p id="hint-msg"></p>
+        <div class="row">
+          <button type="button" class="primary" id="hint-close">知道了</button>
         </div>
       </div>
     </div>
