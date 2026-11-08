@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0d1117" />
+    <title>影子借步 · 影子踩开关</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>影子借步</h1>
+      <p class="subtitle">Shadow on Switch · 影子踩开关，门才开</p>
+    </header>
+
+    <div class="hud">
+      <div class="meta">
+        <div class="level-name" id="level-label">第 1 关</div>
+        <div class="stats">
+          <span id="move-count">步数 0</span>
+          <span class="door-state locked" id="door-state">门：锁</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="btn-undo" title="撤销 (Ctrl+Z)">撤销</button>
+        <button type="button" id="btn-restart" title="重开 (R)">重开</button>
+        <button type="button" id="btn-next" class="primary" disabled>下一关</button>
+      </div>
+    </div>
+
+    <div class="tip" id="tip"></div>
+
+    <div id="play-area">
+      <div class="board-wrap">
+        <div id="board" role="grid" aria-label="游戏棋盘"></div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="dpad" aria-label="方向键">
+        <button type="button" class="up" data-dir="up" aria-label="上">▲</button>
+        <button type="button" class="left" data-dir="left" aria-label="左">◀</button>
+        <button type="button" class="down" data-dir="down" aria-label="下">▼</button>
+        <button type="button" class="right" data-dir="right" aria-label="右">▶</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i class="player"></i> 玩家</span>
+      <span><i class="shadow"></i> 影子</span>
+      <span><i class="sw"></i> 开关</span>
+      <span><i class="ex-locked"></i> 锁门</span>
+      <span><i class="ex-open"></i> 开门</span>
+      <span><i class="hz">▲</i> 陷阱</span>
+    </div>
+
+    <div class="level-select" id="level-select" aria-label="选关"></div>
+
+    <footer class="help">
+      键盘方向键 / WASD · 触屏滑动或下方十字键<br />
+      你走一步，影子反一步；影子踩住开关后门才开，你才能进出口<br />
+      影子撞墙会停住（可钉在开关上）；重叠会挡住；撞墙 / 出界 / 踩刺可撤销或重开
+    </footer>
+
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+      <div class="card">
+        <h2 id="overlay-title">通关</h2>
+        <p id="overlay-msg"></p>
+        <div class="row">
+          <button type="button" id="overlay-replay">再玩本关</button>
+          <button type="button" class="primary" id="overlay-next">下一关</button>
+          <button type="button" id="overlay-close">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/levels.js"></script>
+    <script src="js/game.js"></script>
+  </body>
+</html>
