@@ -675,3 +675,78 @@ button#btn-hint {
 #hint-overlay .card h2 {
   color: #f0a500;
 }
+
+/* --- Full-path hint UI --- */
+#hint-overlay .card {
+  max-width: 380px;
+}
+
+#hint-msg {
+  white-space: pre-wrap;
+  text-align: center;
+}
+
+.hint-path-meta {
+  color: #f0a500;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.hint-path-arrows {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #e6edf3;
+  line-height: 1.4;
+  word-break: break-word;
+  text-shadow: 0 0 12px rgba(240, 165, 0, 0.35);
+  margin: 4px 0 8px;
+}
+
+.hint-path-labels {
+  color: var(--muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 10px;
+}
+
+.hint-path-note {
+  color: var(--info);
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+.cell.hint-trail {
+  box-shadow: inset 0 0 0 2px rgba(240, 165, 0, 0.85),
+    0 0 14px rgba(240, 165, 0, 0.35);
+  background: #2a2108;
+}
+
+.hint-step {
+  position: absolute;
+  inset: 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  pointer-events: none;
+  gap: 0;
+  animation: hint-pulse 1.1s ease-in-out infinite;
+}
+
+.hint-step-num {
+  font-size: calc(var(--cell) * 0.28);
+  font-weight: 800;
+  color: #f0a500;
+  line-height: 1;
+  text-shadow: 0 0 6px rgba(240, 165, 0, 0.9);
+}
+
+.hint-step-dir {
+  font-size: calc(var(--cell) * 0.32);
+  color: #ffd28a;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(240, 165, 0, 0.8);
+}

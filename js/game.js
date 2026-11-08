@@ -80,7 +80,8 @@
     maxCleared: 0, // highest level id cleared (1-based); unlocks maxCleared+1
     cleared: new Set(), // 0-based indices
     hintUnlocked: new Set(), // level ids (1-based) unlocked via ad this session
-    hintArrow: null, // dir to highlight
+    hintPath: null, // full remaining solution dirs
+    hintTrail: null, // [{r,c,n,dir}] player cells along hint
     adTimer: null,
   };
 
@@ -223,7 +224,8 @@
     state.moves = 0;
     state.history = [];
     state.won = false;
-    state.hintArrow = null;
+    state.hintPath = null;
+    state.hintTrail = null;
     hideOverlay();
     hideHintOverlay();
     renderLevelSelect();
@@ -388,7 +390,8 @@
     state.player = pFinal;
     state.shadow = sFinal;
     state.moves += 1;
-    state.hintArrow = null;
+    state.hintPath = null;
+    state.hintTrail = null;
 
     renderPieces();
     updateHud();
@@ -432,7 +435,8 @@
     state.player = prev.player;
     state.shadow = prev.shadow;
     state.moves = prev.moves;
-    state.hintArrow = null;
+    state.hintPath = null;
+    state.hintTrail = null;
     clearStatus();
     renderPieces();
     updateHud();
@@ -501,34 +505,74 @@
     state.adTimer = requestAnimationFrame(tick);
   }
 
-  /** BFS from current state for next best move; fallback to canned solution. */
-  function computeHint() {
-    const lv = window.SHADOW_LEVELS[state.levelIndex];
-    const next = bfsNextDir();
-    if (next) {
-      return {
-        dir: next.dir,
-        text: `下一步建议：${DIR_LABEL[next.dir]} ${DIR_ARROW[next.dir]}（约 ${next.len} 步可解）`,
-      };
-    }
-    if (lv.solution && lv.solution.length) {
-      // Fallback: first move of canned solution only useful at start
-      if (state.moves === 0) {
-        const d = lv.solution[0];
-        return {
-          dir: d,
-          text: lv.hintText || `推荐：${DIR_LABEL[d]} ${DIR_ARROW[d]}`,
-        };
-      }
-      return {
-        dir: null,
-        text: lv.hintText || "试试撤销后换条路线；影子要踩住开关门才开。",
-      };
-    }
-    return { dir: null, text: "让影子踩住开关，再走进出口。" };
+  /** Format full path as arrows + Chinese labels. */
+  function formatPathSequence(path) {
+    if (!path || !path.length) return "";
+    const arrows = path.map((d) => DIR_ARROW[d]).join(" ");
+    const labels = path.map((d) => DIR_LABEL[d]).join("");
+    return { arrows, labels, len: path.length };
   }
 
-  function bfsNextDir() {
+  /** Walk path from current positions; collect player landing cells for trail. */
+  function buildHintTrail(path) {
+    const trail = [];
+    let p = clonePos(state.player);
+    let s = clonePos(state.shadow);
+    for (let i = 0; i < path.length; i++) {
+      const d = path[i];
+      const res = simulateMove(p, s, d);
+      if (!res) break;
+      p = res.p;
+      s = res.s;
+      trail.push({ r: p.r, c: p.c, n: i + 1, dir: d });
+    }
+    return trail;
+  }
+
+  /** BFS from current state for full remaining solution; fallback to canned. */
+  function computeHint() {
+    const lv = window.SHADOW_LEVELS[state.levelIndex];
+    const sol = bfsFullPath();
+    if (sol && sol.path && sol.path.length) {
+      const fmt = formatPathSequence(sol.path);
+      return {
+        path: sol.path,
+        trail: buildHintTrail(sol.path),
+        text:
+          `正确轨迹（${fmt.len} 步）\n` +
+          `${fmt.arrows}\n` +
+          `（${fmt.labels}）`,
+        html:
+          `<div class="hint-path-meta">正确轨迹 · ${fmt.len} 步</div>` +
+          `<div class="hint-path-arrows" aria-label="方向序列">${fmt.arrows}</div>` +
+          `<div class="hint-path-labels">${fmt.labels}</div>` +
+          `<div class="hint-path-note">棋盘上已标出玩家落点顺序</div>`,
+      };
+    }
+    if (lv.solution && lv.solution.length && state.moves === 0) {
+      const path = lv.solution.slice();
+      const fmt = formatPathSequence(path);
+      return {
+        path,
+        trail: buildHintTrail(path),
+        text:
+          `预存解（${fmt.len} 步）\n${fmt.arrows}\n（${fmt.labels}）`,
+        html:
+          `<div class="hint-path-meta">预存解 · ${fmt.len} 步</div>` +
+          `<div class="hint-path-arrows">${fmt.arrows}</div>` +
+          `<div class="hint-path-labels">${fmt.labels}</div>` +
+          `<div class="hint-path-note">棋盘上已标出玩家落点顺序</div>`,
+      };
+    }
+    return {
+      path: null,
+      trail: null,
+      text: lv.hintText || "暂无完整轨迹；试试撤销后换路线，让影子踩住开关再出门。",
+      html: null,
+    };
+  }
+
+  function bfsFullPath() {
     const startP = clonePos(state.player);
     const startS = clonePos(state.shadow);
     const q = [{ p: startP, s: startS, path: [] }];
@@ -543,7 +587,7 @@
         if (!res) continue;
         const npath = cur.path.concat([d]);
         if (res.won) {
-          return { dir: npath[0], len: npath.length };
+          return { path: npath, len: npath.length };
         }
         const sk = `${key(res.p.r, res.p.c)}|${key(res.s.r, res.s.c)}`;
         if (!seen.has(sk)) {
@@ -597,14 +641,19 @@
 
   function showHint() {
     const h = computeHint();
-    state.hintArrow = h.dir;
+    state.hintPath = h.path;
+    state.hintTrail = h.trail;
     renderPieces();
     if (els.hintOverlay) {
-      els.hintTitle.textContent = "提示";
-      els.hintMsg.textContent = h.text;
+      els.hintTitle.textContent = "完整轨迹";
+      if (h.html) {
+        els.hintMsg.innerHTML = h.html;
+      } else {
+        els.hintMsg.textContent = h.text;
+      }
       els.hintOverlay.classList.add("show");
     } else {
-      flashStatus(h.text, "info");
+      flashStatus(h.text.replace(/\n/g, " · "), "info");
     }
   }
 
@@ -802,7 +851,8 @@
   }
 
   function renderPieces() {
-    els.board.querySelectorAll(".piece, .hint-arrow").forEach((n) => n.remove());
+    els.board.querySelectorAll(".piece, .hint-arrow, .hint-step").forEach((n) => n.remove());
+    els.board.querySelectorAll(".cell.hint-trail").forEach((n) => n.classList.remove("hint-trail"));
     const cells = els.board.children;
     const idx = (r, c) => r * state.cols + c;
 
@@ -825,15 +875,27 @@
       cells[idx(state.shadow.r, state.shadow.c)].appendChild(s);
     }
 
-    if (state.hintArrow && DIRS[state.hintArrow]) {
-      const [dr, dc] = DIRS[state.hintArrow];
-      const hr = state.player.r + dr;
-      const hc = state.player.c + dc;
-      if (inBounds(hr, hc) && !state.walls.has(key(hr, hc))) {
-        const arrow = document.createElement("div");
-        arrow.className = "hint-arrow";
-        arrow.textContent = DIR_ARROW[state.hintArrow];
-        cells[idx(hr, hc)].appendChild(arrow);
+    // Full-path trail: glow + step number + direction on each player landing
+    if (state.hintTrail && state.hintTrail.length) {
+      const byCell = new Map();
+      for (const step of state.hintTrail) {
+        const k = key(step.r, step.c);
+        if (!byCell.has(k)) byCell.set(k, []);
+        byCell.get(k).push(step);
+      }
+      for (const [k, steps] of byCell) {
+        const [rs, cs] = k.split(",").map(Number);
+        if (!inBounds(rs, cs) || state.walls.has(k)) continue;
+        const cell = cells[idx(rs, cs)];
+        cell.classList.add("hint-trail");
+        const marker = document.createElement("div");
+        marker.className = "hint-step";
+        const last = steps[steps.length - 1];
+        const nums = steps.map((s) => s.n).join(",");
+        marker.innerHTML =
+          `<span class="hint-step-num">${nums}</span>` +
+          `<span class="hint-step-dir">${DIR_ARROW[last.dir]}</span>`;
+        cell.appendChild(marker);
       }
     }
   }
